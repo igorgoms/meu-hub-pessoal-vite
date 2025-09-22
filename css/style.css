@@ -26,12 +26,11 @@
     background: #6200ea;
 }
 
-/* Flashcards */
-/* Estilos dos Flashcards Melhorados */
+/* Estilos dos Flashcards Corrigidos */
 .flashcard-container {
     position: relative;
     perspective: 1000px;
-    height: 180px; /* Altura fixa para os cards */
+    height: 200px; /* Aumentamos um pouco a altura dos cards */
 }
 
 .flashcard-inner {
@@ -39,23 +38,22 @@
     width: 100%;
     height: 100%;
     transition: transform 0.6s;
-    transform-style: preserve-d;
+    transform-style: preserve-3d;
 }
 
-.flashcard-container:hover .flashcard-inner {
-    transform: rotateY(180deg);
-}
-.flashcard-inner.is-flipped { /* Permite virar com clique também */
+.flashcard-container:hover .flashcard-inner,
+.flashcard-inner.is-flipped {
     transform: rotateY(180deg);
 }
 
-.flashcard-front, .flashcard-back {
+.flashcard-front,
+.flashcard-back {
     position: absolute;
     width: 100%;
     height: 100%;
-    -webkit-backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Essencial para não espelhar o texto */
     backface-visibility: hidden;
-    transform-style: preserve-3d;
+    border-radius: var(--bs-card-border-radius); /* Usa o raio da borda do Bootstrap */
 }
 
 .flashcard-back {
@@ -64,10 +62,16 @@
 
 .delete-card-btn {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: -10px;  /* Levemente para fora do card */
+    right: -10px; /* Levemente para fora do card */
     z-index: 10;
     border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 

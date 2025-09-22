@@ -1,4 +1,7 @@
+// js/flashcards.js
+
 import { supabase } from './supabase-client.js';
+import * as bootstrap from 'bootstrap';
 
 let currentDeckId = null;
 
@@ -8,7 +11,7 @@ export async function initFlashcards() {
         <div class="row">
             <div class="col-lg-4">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header fw-bold">
                         Meus Grupos
                     </div>
                     <ul class="list-group list-group-flush" id="decks-list"></ul>
@@ -41,10 +44,11 @@ async function loadDecks() {
     decksList.innerHTML = '';
     decks.forEach(deck => {
         const deckElement = document.createElement('li');
-        deckElement.className = 'list-group-item d-flex justify-content-between align-items-center';
+        deckElement.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+        deckElement.dataset.deckId = deck.id;
         deckElement.innerHTML = `
-            <span class="deck-name" style="cursor: pointer;">${deck.name}</span>
-            <button class="btn btn-sm btn-outline-danger border-0 delete-deck-btn" data-deck-id="${deck.id}" title="Excluir grupo">
+            <span class="deck-name flex-grow-1" style="cursor: pointer;">${deck.name}</span>
+            <button class="btn btn-sm btn-outline-danger border-0 delete-deck-btn" title="Excluir grupo">
                 <i class="bi bi-trash"></i>
             </button>
         `;
@@ -69,8 +73,7 @@ function showDeckView(deck) {
     deckView.classList.remove('d-none');
     
     document.querySelectorAll('#decks-list .list-group-item').forEach(item => item.classList.remove('active'));
-    const activeItem = Array.from(document.querySelectorAll('#decks-list .list-group-item')).find(el => el.querySelector('.deck-name').textContent === deck.name);
-    if (activeItem) activeItem.classList.add('active');
+    document.querySelector(`#decks-list .list-group-item[data-deck-id='${deck.id}']`)?.classList.add('active');
 
     deckView.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -107,25 +110,29 @@ function showDeckView(deck) {
 
 async function loadFlashcards(deckId) {
     const flashcardsList = document.getElementById('flashcards-list');
-    flashcardsList.innerHTML = '<p class="text-muted">Carregando cards...</p>';
+    flashcardsList.innerHTML = '<p class="text-muted col-12">Carregando cards...</p>';
     const { data: cards, error } = await supabase.from('flashcards').select('*').eq('deck_id', deckId).order('created_at');
     if (error) { console.error(error); return; }
 
     flashcardsList.innerHTML = '';
     if (cards.length === 0) {
-        flashcardsList.innerHTML = '<p class="text-muted">Nenhum card neste grupo ainda. Adicione um novo!</p>';
+        flashcardsList.innerHTML = '<p class="text-muted col-12">Nenhum card neste grupo ainda. Adicione um novo!</p>';
     }
 
     cards.forEach(card => {
         const cardCol = document.createElement('div');
-        cardCol.className = 'col-sm-6 col-md-4';
+        cardCol.className = 'col-sm-6 col-lg-4'; // Grid responsivo
         cardCol.innerHTML = `
-            <div class="flashcard-container" data-card-id="${card.id}">
+            <div class="flashcard-container">
                 <div class="flashcard-inner">
-                    <div class="flashcard-front card card-body text-center d-flex justify-content-center align-items-center">${card.front_content}</div>
-                    <div class="flashcard-back card card-body text-center d-flex justify-content-center align-items-center">${card.back_content}</div>
+                    <div class="flashcard-front card card-body text-center d-flex justify-content-center align-items-center">
+                        <p class="m-0">${card.front_content}</p>
+                    </div>
+                    <div class="flashcard-back card card-body text-center d-flex justify-content-center align-items-center">
+                         <p class="m-0">${card.back_content}</p>
+                    </div>
                 </div>
-                <button class="btn btn-sm btn-danger delete-card-btn" title="Excluir card">
+                <button class="btn btn-sm btn-danger delete-card-btn" data-card-id="${card.id}" title="Excluir card">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>`;
@@ -143,9 +150,8 @@ async function handleNewFlashcardSubmit(event) {
     const { error } = await supabase.from('flashcards').insert({ front_content: front, back_content: back, deck_id: currentDeckId });
     if (!error) {
         document.getElementById('new-flashcard-form').reset();
-        // Esconde o formulário depois de adicionar
         const collapseElement = document.getElementById('new-flashcard-collapse');
-        const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
+        const bsCollapse = bootstrap.Collapse.getInstance(collapseElement) || new bootstrap.Collapse(collapseElement, { toggle: false });
         bsCollapse.hide();
         await loadFlashcards(currentDeckId);
     }
@@ -159,18 +165,17 @@ async function handleFlashcardClicks(event) {
         const deckId = deleteDeckBtn.dataset.deckId;
         if (confirm('Tem certeza que deseja apagar este grupo? TODOS os cards dentro dele serão perdidos.')) {
             await supabase.from('flashcards').delete().eq('deck_id', deckId);
-      await supabase.from('flashcard_decks').delete().eq('id', deckId);
+            await supabase.from('flashcard_decks').delete().eq('id', deckId);
             await loadDecks();
             document.getElementById('deck-view').classList.add('d-none');
         }
     }
 
     if (deleteCardBtn) {
-        const cardContainer = deleteCardBtn.closest('.flashcard-container');
-        const cardId = cardContainer.dataset.cardId;
+        const cardId = deleteCardBtn.dataset.cardId;
         if (confirm('Tem certeza que deseja apagar este card?')) {
             await supabase.from('flashcards').delete().eq('id', cardId);
-            cardContainer.parentElement.remove();
+            deleteCardBtn.closest('.col-sm-6').remove(); // Remove a coluna do card
         }
     }
 }
