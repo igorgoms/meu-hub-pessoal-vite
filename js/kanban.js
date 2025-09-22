@@ -37,15 +37,22 @@ async function loadKanbanTasks() {
         return;
     }
     
-    // Limpa todas as colunas antes de adicionar as tarefas
     document.querySelectorAll('.kanban-tasks').forEach(col => col.innerHTML = '');
 
     tasks.forEach(task => {
         const taskCard = document.createElement('div');
-        taskCard.className = 'card mb-2';
+        taskCard.className = 'card mb-2 task-card';
         taskCard.dataset.id = task.id;
         taskCard.style.borderLeftColor = task.color;
-        taskCard.innerHTML = `<div class="card-body p-2">${task.content}</div>`;
+        
+        taskCard.innerHTML = `
+            <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                <span>${task.content}</span>
+                <button class="btn btn-sm btn-outline-danger border-0 delete-task-btn">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
         
         const columnElement = document.getElementById(`col-${task.status.replace(/ /g, '-')}`);
         if (columnElement) {
@@ -53,6 +60,26 @@ async function loadKanbanTasks() {
         }
     });
 }
+
+// Adicione este novo código em algum lugar do seu kanban.js
+document.getElementById('kanban-board').addEventListener('click', async (event) => {
+    const deleteButton = event.target.closest('.delete-task-btn');
+    if (deleteButton) {
+        if (confirm('Tem certeza que deseja apagar esta tarefa?')) {
+            const taskCard = deleteButton.closest('.task-card');
+            const taskId = taskCard.dataset.id;
+            
+            const { error } = await supabase.from('kanban_tasks').delete().eq('id', taskId);
+
+            if (error) {
+                console.error('Erro ao apagar tarefa:', error);
+                alert('Não foi possível apagar a tarefa.');
+            } else {
+                taskCard.remove(); // Remove o elemento da tela
+            }
+        }
+    }
+});
 
 async function handleNewTaskSubmit(event) {
     event.preventDefault();

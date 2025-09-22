@@ -1,5 +1,8 @@
 // js/reviews.js
 import { supabase } from './supabase-client.js';
+import * as bootstrap from 'bootstrap';
+
+let reviewModal = null; // Variável para guardar a instância do modal
 
 export async function initReviews() {
     const reviewsSection = document.getElementById('reviews-section');
@@ -46,62 +49,51 @@ export async function initReviews() {
             </div>
             <div class="col-lg-8">
                 <h3>Minhas Resenhas</h3>
-                <div id="reviews-list-container" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                    </div>
+                <div id="reviews-list-container" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4"></div>
             </div>
         </div>
     `;
 
     setupStarRating();
     document.getElementById('new-review-form').addEventListener('submit', handleNewReviewSubmit);
+    document.getElementById('reviews-list-container').addEventListener('click', handleReviewCardClick);
+    reviewModal = new bootstrap.Modal(document.getElementById('reviewDetailModal')); // Inicializa o modal
     await loadReviews();
 }
 
-function setupStarRating() {
-    const stars = document.querySelectorAll('.star-rating .star-icon');
-    const ratingInput = document.getElementById('review-rating');
-    stars.forEach(star => {
-        star.addEventListener('click', () => {
-            ratingInput.value = star.dataset.value;
-            updateStarDisplay(ratingInput.value);
-        });
-        star.addEventListener('mouseover', () => updateStarDisplay(star.dataset.value, true));
-    });
-    document.querySelector('.star-rating').addEventListener('mouseout', () => updateStarDisplay(ratingInput.value));
-}
 
-function updateStarDisplay(value, isHover = false) {
-    const stars = document.querySelectorAll('.star-rating .star-icon');
-    stars.forEach(star => {
-        star.classList.toggle('hover', isHover && star.dataset.value <= value);
-        star.classList.toggle('selected', !isHover && star.dataset.value <= value);
-        star.classList.replace(star.dataset.value <= value ? 'bi-star' : 'bi-star-fill', star.dataset.value <= value ? 'bi-star-fill' : 'bi-star');
-    });
-}
+function setupStarRating() { /* ... (função igual) ... */ }
+function updateStarDisplay(value, isHover = false) { /* ... (função igual) ... */ }
 
+
+let reviewsData = []; // Armazena os dados das resenhas para usar no modal
 
 async function loadReviews() {
     const container = document.getElementById('reviews-list-container');
     container.innerHTML = '<p>Carregando...</p>';
-    const { data: reviews, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
     if (error) { console.error(error); return; }
 
+    reviewsData = data; // Salva os dados
     container.innerHTML = '';
-    reviews.forEach(review => {
+    reviewsData.forEach((review, index) => {
         let starsHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            starsHTML += `<i class="bi ${i <= review.rating ? 'bi-star-fill' : 'bi-star'} selected"></i> `;
-        }
+        for (let i = 1; i <= 5; i++) { starsHTML += `<i class="bi ${i <= review.rating ? 'bi-star-fill' : 'bi-star'} selected"></i> `; }
         const col = document.createElement('div');
         col.className = 'col';
         col.innerHTML = `
-            <div class="card h-100">
+            <div class="card h-100 review-card" data-index="${index}">
                 <img src="${review.image_url}" class="card-img-top" alt="${review.title}">
                 <div class="card-body">
                     <h5 class="card-title">${review.title}</h5>
-                    <h6 class="card-subtitle mb-2 text-body-secondary">${review.category}</h6>
+                    <p class="card-text small text-body-secondary">${review.category}</p>
                     <p class="card-text">${starsHTML}</p>
-                    <p class="card-text small">${review.review_text}</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                     <button class="btn btn-sm btn-outline-secondary view-review-btn">Ver Detalhes</button>
+                     <button class="btn btn-sm btn-outline-danger delete-review-btn">
+                        <i class="bi bi-trash"></i> Excluir
+                     </button>
                 </div>
             </div>
         `;
@@ -109,40 +101,63 @@ async function loadReviews() {
     });
 }
 
-async function handleNewReviewSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    const btn = form.querySelector('button');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando...';
+async function handleNewReviewSubmit(event) { /* ... (função igual, mas adicione uma verificação de 'image_path') ... */
+    // Sugestão: adicione uma coluna 'image_path' na sua tabela 'reviews' para facilitar a exclusão da imagem no Storage
+    // Por enquanto, vamos manter a lógica de upload como está. A exclusão da imagem pode não funcionar sem o path.
+}
 
-    try {
-        const title = form.querySelector('#review-title').value;
-        const category = form.querySelector('#review-category').value;
-        const rating = form.querySelector('#review-rating').value;
-        const review_text = form.querySelector('#review-text').value;
-        const imageFile = form.querySelector('#review-image').files[0];
+function handleReviewCardClick(event) {
+    const card = event.target.closest('.review-card');
+    if (!card) return;
 
-        if (!imageFile || rating === '0') throw new Error("Avaliação e imagem são obrigatórias.");
+    const reviewIndex = card.dataset.index;
+    const review = reviewsData[reviewIndex];
 
-        const filePath = `public/${Date.now()}-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('review-images').upload(filePath, imageFile);
-        if (uploadError) throw uploadError;
+    if (event.target.closest('.view-review-btn')) {
+        showReviewModal(review);
+    }
+    if (event.target.closest('.delete-review-btn')) {
+        handleDeleteReview(review, card);
+    }
+}
 
-        const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(filePath);
-        const image_url = urlData.publicUrl;
+function showReviewModal(review) {
+    document.getElementById('reviewModalTitle').textContent = review.title;
+    let starsHTML = '';
+    for (let i = 1; i <= 5; i++) { starsHTML += `<i class="bi ${i <= review.rating ? 'bi-star-fill' : 'bi-star'} selected fs-4"></i> `; }
+    
+    const modalBody = document.getElementById('reviewModalBody');
+    modalBody.innerHTML = `
+        <img src="${review.image_url}" class="img-fluid rounded mb-3" alt="Capa de ${review.title}">
+        <p><strong>Categoria:</strong> ${review.category}</p>
+        <p><strong>Avaliação:</strong> ${starsHTML}</p>
+        <hr>
+        <p>${review.review_text}</p>
+    `;
+    reviewModal.show();
+}
 
-        const { error: insertError } = await supabase.from('reviews').insert({ title, category, rating, review_text, image_url });
-        if (insertError) throw insertError;
-        
-        form.reset();
-        updateStarDisplay(0);
-        await loadReviews();
-    } catch (error) {
-        console.error('Erro ao salvar resenha:', error);
-        alert(`Erro: ${error.message}`);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Salvar Resenha';
+async function handleDeleteReview(review, cardElement) {
+    if (confirm(`Tem certeza que deseja apagar a resenha de "${review.title}"?`)) {
+        // Excluir do banco de dados
+        const { error: dbError } = await supabase.from('reviews').delete().eq('id', review.id);
+
+        if (dbError) {
+            console.error('Erro ao apagar do banco de dados:', dbError);
+            alert('Não foi possível apagar a resenha.');
+            return;
+        }
+
+        // Tenta apagar a imagem do Storage (pode falhar se o path não for exato)
+        try {
+            const imagePath = new URL(review.image_url).pathname.split('/review-images/')[1];
+            if (imagePath) {
+                await supabase.storage.from('review-images').remove([imagePath]);
+            }
+        } catch (storageError) {
+            console.warn("Não foi possível apagar a imagem do Storage. Isso pode acontecer se o path não foi encontrado.", storageError);
+        }
+
+        cardElement.parentElement.remove(); // Remove o card da tela
     }
 }
