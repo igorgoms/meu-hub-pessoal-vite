@@ -27,14 +27,11 @@
 }
 
 /* Flashcards */
-#flashcards-list {
+/* Estilos dos Flashcards Melhorados */
+.flashcard-container {
+    position: relative;
     perspective: 1000px;
-}
-
-.flashcard {
-    background-color: transparent;
-    height: 150px;
-    cursor: pointer;
+    height: 180px; /* Altura fixa para os cards */
 }
 
 .flashcard-inner {
@@ -42,10 +39,13 @@
     width: 100%;
     height: 100%;
     transition: transform 0.6s;
-    transform-style: preserve-3d;
+    transform-style: preserve-d;
 }
 
-.flashcard-inner.is-flipped {
+.flashcard-container:hover .flashcard-inner {
+    transform: rotateY(180deg);
+}
+.flashcard-inner.is-flipped { /* Permite virar com clique também */
     transform: rotateY(180deg);
 }
 
@@ -55,11 +55,19 @@
     height: 100%;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    transform-style: preserve-3d; /* Fix para renderização no Chrome */
+    transform-style: preserve-3d;
 }
 
 .flashcard-back {
     transform: rotateY(180deg);
+}
+
+.delete-card-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 10;
+    border-radius: 50%;
 }
 
 
