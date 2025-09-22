@@ -1,4 +1,6 @@
 // js/main.js
+import 'bootstrap/dist/css/bootstrap.min.css';
+import * as bootstrap from 'bootstrap';
 import { initKanban } from './kanban.js';
 import { initFlashcards } from './flashcards.js';
 import { initReviews } from './reviews.js';

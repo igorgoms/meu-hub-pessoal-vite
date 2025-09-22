@@ -1,4 +1,5 @@
 // js/flashcards.js
+import { supabase } from './supabase-client.js';
 
 let currentDeckId = null;
 

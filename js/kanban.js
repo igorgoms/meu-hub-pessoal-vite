@@ -1,4 +1,5 @@
 // js/kanban.js
+import { supabase } from './supabase-client.js';
 
 export async function initKanban() {
     const board = document.getElementById('kanban-board');

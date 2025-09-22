@@ -1,4 +1,5 @@
 // js/reviews.js
+import { supabase } from './supabase-client.js';
 
 export async function initReviews() {
     const reviewsSection = document.getElementById('reviews-section');
