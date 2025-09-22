@@ -121,7 +121,8 @@ async function loadFlashcards(deckId) {
 
     cards.forEach(card => {
         const cardCol = document.createElement('div');
-        cardCol.className = 'col-sm-6 col-lg-4'; // Grid responsivo
+        // A MÁGICA DO GRID ACONTECE AQUI:
+        cardCol.className = 'col-sm-6 col-lg-4'; 
         cardCol.innerHTML = `
             <div class="flashcard-container">
                 <div class="flashcard-inner">
@@ -175,7 +176,7 @@ async function handleFlashcardClicks(event) {
         const cardId = deleteCardBtn.dataset.cardId;
         if (confirm('Tem certeza que deseja apagar este card?')) {
             await supabase.from('flashcards').delete().eq('id', cardId);
-            deleteCardBtn.closest('.col-sm-6').remove(); // Remove a coluna do card
+            deleteCardBtn.closest('.col-sm-6').remove();
         }
     }
 }
