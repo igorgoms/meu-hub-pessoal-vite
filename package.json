@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
-    "bootstrap": "^5.3.8"
+    "bootstrap": "^5.3.8",
+    "sortablejs": "^1.15.6"
   }
 }
