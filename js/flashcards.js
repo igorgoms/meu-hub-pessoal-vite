@@ -2,7 +2,7 @@
 
 let currentDeckId = null;
 
-async function initFlashcards() {
+export async function initFlashcards() {
     const flashcardsSection = document.getElementById('flashcards-section');
     flashcardsSection.innerHTML = `
         <div class="row">

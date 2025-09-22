@@ -1,6 +1,6 @@
 // js/reviews.js
 
-async function initReviews() {
+export async function initReviews() {
     const reviewsSection = document.getElementById('reviews-section');
     reviewsSection.innerHTML = `
         <div class="row">

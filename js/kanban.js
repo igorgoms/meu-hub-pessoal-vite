@@ -1,6 +1,6 @@
 // js/kanban.js
 
-async function initKanban() {
+export async function initKanban() {
     const board = document.getElementById('kanban-board');
     board.innerHTML = ''; // Limpa o quadro
     const columns = ['A Fazer', 'Em Progresso', 'Concluído', 'Cancelado'];

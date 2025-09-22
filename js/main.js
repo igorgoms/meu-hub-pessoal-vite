@@ -1,4 +1,7 @@
 // js/main.js
+import { initKanban } from './kanban.js';
+import { initFlashcards } from './flashcards.js';
+import { initReviews } from './reviews.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const themeSwitcher = document.getElementById('theme-switcher');
