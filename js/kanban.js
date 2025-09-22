@@ -56,24 +56,50 @@ async function loadKanbanTasks() {
 
 async function handleNewTaskSubmit(event) {
     event.preventDefault();
-    const content = document.getElementById('new-task-content').value;
-    const color = document.getElementById('new-task-color').value;
+    console.log("1. Formulário de nova tarefa enviado.");
 
-    if (!content.trim()) return;
+    const contentInput = document.getElementById('new-task-content');
+    const colorSelect = document.getElementById('new-task-color');
+    
+    const content = contentInput.value.trim();
+    const color = colorSelect.value;
+    console.log("2. Conteúdo a ser salvo:", content);
 
-    const { error } = await supabase.from('kanban_tasks').insert({ content, color, status: 'A Fazer' });
+    if (!content) return;
+
+    // Desabilitar o botão para evitar cliques duplos
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Salvando...';
+
+    console.log("3. Enviando dados para o Supabase...");
+    const { data, error } = await supabase.from('kanban_tasks').insert({
+        content: content,
+        status: 'A Fazer',
+        color: color
+    });
 
     if (error) {
-        console.error('Erro ao adicionar tarefa:', error);
-    } else {
-        document.getElementById('new-task-form').reset();
-        // Fecha o modal do Bootstrap
-        const modalElement = document.getElementById('newTaskModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        modalInstance.hide();
-        // Recarrega as tarefas
-        await loadKanbanTasks();
+        console.error("4. ERRO retornado pelo Supabase:", error);
+        alert("Ocorreu um erro ao criar a tarefa. Verifique o console do navegador para mais detalhes.");
+        // Reabilitar o botão em caso de erro
+        submitButton.disabled = false;
+        submitButton.textContent = 'Salvar Tarefa';
+        return; 
     }
+
+    console.log("5. Tarefa inserida com SUCESSO!", data);
+    
+    document.getElementById('new-task-form').reset();
+    const modalElement = document.getElementById('newTaskModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    modalInstance.hide();
+    
+    await loadKanbanTasks();
+
+    // Reabilitar o botão ao final
+    submitButton.disabled = false;
+    submitButton.textContent = 'Salvar Tarefa';
 }
 
 function setupDragAndDrop() {
